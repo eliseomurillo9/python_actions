@@ -1,6 +1,9 @@
 name: Build and Execute Python Script
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,9 +30,23 @@ jobs:
       - name: Exécution du script Python
         run: python3 script.py
 
-      - name: Discord notification
+  notify:
+    if: ${{ !cancelled() }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord success notification
+        if: ${{ needs.build.result == 'success'  }}
         env:
-          DISCORD_WEBHOOK: https://discord.com/api/webhooks/1201815336937324574/lEpYC03eGEjMLr28MA1OOmvU4Pf5rja5m8QeB_DvPttwK3VOrh-NZH0qJZxZgZwJxL7j
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The project {{ EVENT_PAYLOAD.repository.full_name }} has been deployed.'
+          args: 'The CI of {{ EVENT_PAYLOAD.repository.full_name }} is green! :white_check_mark:'
+
+      - name: Discord failed notification
+        if: ${{ needs.build.result != 'success' }}
+        env:
+          DISCORD_WEBHOOK: "https://discord.com/api/webhooks/1201815336937324574/lEpYC03eGEjMLr28MA1OOmvU4Pf5rja5m8QeB_DvPttwK3VOrh-NZH0qJZxZgZwJxL7j"
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'The CI of {{ EVENT_PAYLOAD.repository.full_name }} is red! :x:'
