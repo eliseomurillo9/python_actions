@@ -1,0 +1,35 @@
+name: Build and Execute Python Script
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Installation des dépendances
+        run: |
+          sudo apt-get install python3
+          pip install -r requirements.txt
+
+      - name: Exécution du script Python
+        run: python3 script.py
+
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: https://discord.com/api/webhooks/1201815336937324574/lEpYC03eGEjMLr28MA1OOmvU4Pf5rja5m8QeB_DvPttwK3VOrh-NZH0qJZxZgZwJxL7j
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'The project {{ EVENT_PAYLOAD.repository.full_name }} has been deployed.'
